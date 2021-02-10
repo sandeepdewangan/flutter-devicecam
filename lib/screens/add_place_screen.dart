@@ -1,7 +1,11 @@
 import 'dart:io';
 
+import 'package:devicecam/provider/great_places.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart' as syspath;
+import 'package:provider/provider.dart';
 
 class AddPlaceScreen extends StatefulWidget {
   static const routeName = 'add-place';
@@ -10,7 +14,8 @@ class AddPlaceScreen extends StatefulWidget {
 }
 
 class _AddPlaceScreenState extends State<AddPlaceScreen> {
-  File _storedImage;
+  File _pickedImage;
+  final _titleController = TextEditingController();
 
   Future<void> _takePicture() async {
     final picker = ImagePicker();
@@ -18,9 +23,25 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       source: ImageSource.camera,
       maxWidth: 600,
     );
+    if(imageFile == null){
+      return;
+    }
     setState(() {
-      _storedImage = File(imageFile.path);
+      _pickedImage = File(imageFile.path);
     });
+    // app data directory path_provider package
+    final appDir = await syspath.getApplicationDocumentsDirectory();
+    // get file name using path package
+    final fileName = path.basename(imageFile.path);
+    final savedImage = await _pickedImage.copy('${appDir.path}/$fileName');
+  }
+
+  void _saveImage(){
+    if(_titleController.text.isEmpty || _pickedImage == null){
+      return;
+    }
+    Provider.of<GreatPlaces>(context, listen: false).addPlace(_titleController.text, _pickedImage);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -39,6 +60,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
               child: Column(
                 children: [
                   TextField(
+                    controller: _titleController,
                     decoration: InputDecoration(labelText: 'Title'),
                   ),
                   SizedBox(
@@ -52,9 +74,9 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                         decoration: BoxDecoration(
                           border: Border.all(),
                         ),
-                        child: _storedImage != null
+                        child: _pickedImage != null
                             ? Image.file(
-                                _storedImage,
+                                _pickedImage,
                                 fit: BoxFit.cover,
                               )
                             : Text(
@@ -93,7 +115,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           Expanded(
             child: FlatButton(
               color: Theme.of(context).accentColor,
-              onPressed: () {},
+              onPressed: _saveImage,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
