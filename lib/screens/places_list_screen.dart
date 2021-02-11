@@ -18,22 +18,32 @@ class PlacesListScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<GreatPlaces>(
-        child: Center(child: const Text('No places to display!')),
-        builder: (ctx, greatPlaces, staticChild) => greatPlaces.places.length <=
-                0
-            ? staticChild
-            : ListView.builder(
-                itemCount: greatPlaces.places.length,
-                itemBuilder: (ctx, i) {
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: FileImage(greatPlaces.places[i].image),
-                    ),
-                    title: Text(greatPlaces.places[i].title),
-                    onTap: () {},
-                  );
-                }),
+      body: FutureBuilder(
+        future: Provider.of<GreatPlaces>(context, listen: false)
+            .fetchAndSetPlaces(),
+        builder: (context, snapshot) => snapshot.connectionState ==
+                ConnectionState.waiting
+            ? Center(
+                child: CircularProgressIndicator(),
+              )
+            : Consumer<GreatPlaces>(
+                child: Center(child: const Text('No places to display!')),
+                builder: (ctx, greatPlaces, staticChild) =>
+                    greatPlaces.places.length <= 0
+                        ? staticChild
+                        : ListView.builder(
+                            itemCount: greatPlaces.places.length,
+                            itemBuilder: (ctx, i) {
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                      FileImage(greatPlaces.places[i].image),
+                                ),
+                                title: Text(greatPlaces.places[i].title),
+                                onTap: () {},
+                              );
+                            }),
+              ),
       ),
     );
   }
